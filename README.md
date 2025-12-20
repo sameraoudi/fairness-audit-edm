@@ -3,7 +3,7 @@
 **Supplementary Code for the Paper:**
 *"Beyond the Black Box: A Comparative Audit of Intersectional Fairness and Adversarial Mitigation in Educational Data Mining"*
 
-**Authors:** Dr. Samer Aoudi
+**Author:** Dr. Samer Aoudi
 **Target Journal:** Computers & Education: Artificial Intelligence (CAEAI)
 
 
@@ -131,9 +131,22 @@ Compile the results into the final tables and figures used in the manuscript.
 Generate Table 2 (Comparative Metrics) Aggregates performance (Accuracy, Recall) and fairness (EOD) metrics from all models into a single CSV.
 python scripts/generate_paper_results.py
 
+
 # Output: results/final_paper_results.csv
 
 Generate Figure 2 (Pareto Frontier) Visualizes the trade-off between Recall and Unfairness to identify the Pareto-optimal strategy.
 python scripts/plot_pareto.py
 
 # Output: figures/pareto_oulad.png
+
+## 📊 Results Summary
+
+| Dataset | Method                   | Verdict                                      |
+|--------|--------------------------|----------------------------------------------|
+| OULAD  | Threshold Optimization   | Best Result (High Recall, Low Bias)           |
+| OULAD  | Adversarial Debiasing    | Underperformed (Hypothesis 2 Rejected)        |
+| xAPI   | Reweighing               | Best for small/proxy-heavy data               |
+| UCI    | Adversarial Debiasing    | Model Collapse (EOD = 1.0)                    |
+
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
