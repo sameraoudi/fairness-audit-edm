@@ -155,3 +155,8 @@ python scripts/plot_pareto.py
 
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Citation
+Please cite the software using the generated DOI:
+> Aoudi, S. (2025). *Fairness Audit & Mitigation Framework for EDM (v1.0.1)* [Computer software]. Zenodo. 
+https://doi.org/10.5281/zenodo.17999876
