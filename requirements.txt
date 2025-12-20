@@ -11,6 +11,8 @@
 # Notes       :
 # - Version lower bounds are specified to ensure compatibility and
 #   reproducibility across experiments.
+# - Be careful of a fundamental version incompatibility between XGBoost 2.x 
+#   and the SHAP library
 # - Tested with Python >= 3.9.
 # - GPU support for XGBoost is optional and environment-dependent.
 # =============================================================================
@@ -18,5 +20,5 @@
 pandas>=2.0.0
 numpy>=1.24.0
 scikit-learn>=1.3.0
-xgboost>=2.0.0
+xgboost==1.7.6
 pyyaml>=6.0
