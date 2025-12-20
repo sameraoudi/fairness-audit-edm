@@ -23,7 +23,7 @@ Description   : Final results aggregation script for the educational fairness
                 - Exports a publication-ready CSV table to results/
 
 How to Run   :
-                python scripts/generate_paper_results.py
+                python scripts/generate_final_results.py
 
 Inputs        :
                 data/processed/<dataset>/
