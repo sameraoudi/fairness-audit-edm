@@ -141,12 +141,12 @@ python scripts/plot_pareto.py
 
 ## 📊 Results Summary
 
-| Dataset | Method                   | Verdict                                      |
-|--------|--------------------------|----------------------------------------------|
-| OULAD  | Threshold Optimization   | Best Result (High Recall, Low Bias)           |
-| OULAD  | Adversarial Debiasing    | Underperformed (Hypothesis 2 Rejected)        |
-| xAPI   | Reweighing               | Best for small/proxy-heavy data               |
-| UCI    | Adversarial Debiasing    | Model Collapse (EOD = 1.0)                    |
+| Dataset | Method                   | Verdict                                       |
+|---------|--------------------------|-----------------------------------------------|
+| OULAD   | Threshold Optimization   | Best Result (High Recall, Low Bias)           |
+| OULAD   | Adversarial Debiasing    | Underperformed (Hypothesis 2 Rejected)        |
+| xAPI    | Reweighing               | Best for small/proxy-heavy data               |
+| UCI     | Adversarial Debiasing    | Model Collapse (EOD = 1.0)                    |
 
 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
