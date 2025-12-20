@@ -57,7 +57,7 @@ fairness-audit-edm/
 │   ├── train_mitigation_standard.py    # Step 2: Train Reweighing & Thresholding
 │   ├── train_mitigation_adversarial.py # Step 3: Train Adversarial Network
 │   ├── generate_final_results.py       # Step 4: Generate Table: Comparative Performance of Mitigation Strategies
-│   └── plot_pareto.py                  # Step 5: Generate Figure: Faireness-Accuracy Pareto Frontier
+│   └── plot_pareto.py                  # Step 5: Generate Figure: Faireness-Accuracy Pareto Frontier 
 │
 ├── src/                                # Helper modules
 │   ├── __init__.py
