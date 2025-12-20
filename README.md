@@ -48,6 +48,11 @@ fairness-audit-edm/
 │   └── final_paper_results.csv
 │
 ├── scripts/                            # Main execution pipelines
+│   ├── preprocess/                     # <--- Data Transformation Scripts
+│   │   ├── preprocess_oulad.py
+│   │   ├── preprocess_uci.py
+│   │   └── preprocess_xapi.py
+│   │
 │   ├── audit_fairness.py               # Step 1: Detect Bias (Hypothesis 1)
 │   ├── train_mitigation_standard.py    # Step 2: Train Reweighing & Thresholding
 │   ├── train_mitigation_adversarial.py # Step 3: Train Adversarial Network
