@@ -1,0 +1,22 @@
+# =============================================================================
+# File Name   : requirements.txt
+# Description : Python dependencies for the fairness-aware educational
+#               machine learning pipeline. These packages support data
+#               preprocessing, verification, baseline model training, and
+#               reproducible experimentation across OULAD, UCI, and xAPI
+#               datasets.
+#
+# Usage       :
+#   pip install -r requirements.txt
+# Notes       :
+# - Version lower bounds are specified to ensure compatibility and
+#   reproducibility across experiments.
+# - Tested with Python >= 3.9.
+# - GPU support for XGBoost is optional and environment-dependent.
+# =============================================================================
+
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+xgboost>=2.0.0
+pyyaml>=6.0
