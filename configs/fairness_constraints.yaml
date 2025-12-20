@@ -1,3 +1,35 @@
+# =============================================================================
+# File Name   : fairness_constraints.yaml
+# Description : Configuration file defining statistical guardrails and workflow
+#               controls for fairness-aware analysis in the educational
+#               machine learning pipeline.
+#
+#               These constraints are used to:
+#               - Enforce minimum subgroup sizes for valid fairness reporting
+#               - Control bootstrap-based uncertainty estimation
+#               - Ensure reproducibility via a global random seed
+#               - Govern when intersectional analysis is applied
+#
+# Usage       :
+#   Loaded by training, evaluation, and fairness analysis scripts to ensure
+#   consistent experimental behavior across datasets (OULAD, UCI, xAPI).
+#
+# Author      : Dr. Samer Aoudi
+# Affiliation : Higher Colleges of Technology (HCT), UAE
+# Role        : Assistant Professor & Division Chair (CIS)
+# Email       : cybersecurity@sameraoudi.com
+# ORCID       : 0000-0003-3887-0119
+# Created On  : 2025-Dec-10
+#
+# License     : MIT License (recommended for reproducible research)
+#
+# Notes       :
+# - Subgroups below min_subgroup_size are excluded from inferential fairness
+#   comparisons and reported descriptively only.
+# - Bootstrap confidence intervals follow the specified ci_method and level.
+# - The random_seed ensures deterministic data splits and metric estimation.
+# =============================================================================
+
 # Statistical Guardrails
 min_subgroup_size: 50
 bootstrap_samples: 1000
