@@ -136,8 +136,11 @@ def compute_sample_weights(y, sensitive_col):
     Pre-processing: Inverse Probability Reweighing.
     Weights samples inversely to their group frequency to balance representation.
     """
+    # Ensure y is 1D for grouping
+    y_series = y.squeeze() if isinstance(y, pd.DataFrame) else y
+    
     # Create strata: y + sensitive
-    strata = y.astype(str) + "_" + sensitive_col.astype(str)
+    strata = y_series.astype(str) + "_" + sensitive_col.astype(str)
     counts = strata.value_counts()
     n_total = len(y)
     n_strata = len(counts)
@@ -164,8 +167,6 @@ def run_standard_mitigation(dataset):
     d = load_data(dataset)
     
     # We focus on SES Quintile as the primary sensitive attribute for mitigation
-    # (based on your audit findings showing SES bias > Gender bias)
-    # If SES is missing (xAPI), we fall back to Gender.
     sens_col = "ses_quintile"
     if dataset == "xapi":
         sens_col = "gender"
@@ -181,7 +182,7 @@ def run_standard_mitigation(dataset):
     # METHOD 1: Pre-processing (Reweighing)
     # ---------------------------------------------------------
     print(f"   -> Running Pre-processing (Reweighing)...")
-    sample_weights = compute_sample_weights(d["y_train"]["y"], s_train)
+    sample_weights = compute_sample_weights(d["y_train"], s_train)
     
     # Train new XGBoost with weights
     # Note: Using XGBoost 1.7.6 compatible syntax
@@ -189,6 +190,7 @@ def run_standard_mitigation(dataset):
         random_state=RANDOM_SEED, 
         eval_metric='logloss'
     )
+    # FIX 1: Ensure y is 1D using .values.ravel()
     model_pre.fit(d["X_train"], d["y_train"].values.ravel(), sample_weight=sample_weights)
     
     # Evaluate
@@ -218,7 +220,6 @@ def run_standard_mitigation(dataset):
         baseline_model = pickle.load(f)
 
     # Fit ThresholdOptimizer on VALIDATION set
-    # Constraint: 'equalized_odds' tries to balance TPR (Recall) and FPR across groups
     post_model = ThresholdOptimizer(
         estimator=baseline_model,
         constraints="equalized_odds", 
@@ -226,14 +227,14 @@ def run_standard_mitigation(dataset):
         prefit=True
     )
     
-    post_model.fit(d["X_val"], d["y_val"], sensitive_features=s_val)
+    # FIX 2: Ensure y is 1D Series using .iloc[:, 0]
+    post_model.fit(d["X_val"], d["y_val"].iloc[:, 0], sensitive_features=s_val)
     
     # Predict on Test
-    # Note: ThresholdOptimizer returns predictions (0/1), not probabilities
     preds_post = post_model.predict(d["X_test"], sensitive_features=s_test)
     
     metrics_post = evaluate(d["y_test"], preds_post) # No AUC for hard predictions
-    metrics_post["roc_auc"] = "N/A" # Post-processing outputs decisions, not scores
+    metrics_post["roc_auc"] = "N/A"
     metrics_post.update({"dataset": dataset, "method": "ThresholdOptimizer"})
     results.append(metrics_post)
     
