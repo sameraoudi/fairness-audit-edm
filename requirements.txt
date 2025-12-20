@@ -24,3 +24,5 @@ xgboost==1.7.6
 pyyaml>=6.0
 networkx 
 matplotlib
+fairlearn 
+torch
