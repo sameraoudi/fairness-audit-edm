@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 ===============================================================================
-Script Name   : generate_pareto_plot.py
+Script Name   : plot_pareto.py
 Description   : Generates a fairness–utility Pareto plot illustrating the
                 trade-off between predictive performance and algorithmic
                 fairness for the OULAD dataset.
@@ -21,7 +21,7 @@ Description   : Generates a fairness–utility Pareto plot illustrating the
                 Pareto frontier between accuracy and fairness.
 
 How to Run   :
-                python scripts/generate_pareto_plot.py
+                python scripts/plot_pareto.py
 
 Inputs        :
                 - Manually specified metrics (derived from final_paper_results.csv)
