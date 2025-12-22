@@ -28,7 +28,7 @@ Inputs        :
                   for the OULAD dataset.
 
 Outputs       :
-                - figure_2_pareto.png   (high-resolution, 300 DPI)
+                - figure_2_pareto_oulad.png   (high-resolution, 300 DPI)
 
 Author        : Dr. Samer Aoudi
 Affiliation   : Higher Colleges of Technology (HCT), UAE
@@ -133,7 +133,7 @@ def plot_pareto(dataset="oulad"):
     plt.grid(True, linestyle='--', alpha=0.6)
     
     # Save
-    out_path = FIGURES_DIR / f"pareto_{dataset}.png"
+    out_path = FIGURES_DIR / f"figure2_pareto_{dataset}.png"
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     print(f"Pareto plot saved to {out_path}")
 
