@@ -1,4 +1,4 @@
-# Beyond the Black Box: Fairness Audit & Mitigation in Educational Data Mining
+# Fairness Audit & Mitigation in Educational Data Mining
 
 **Supplementary Code for the Paper:**
 *"Beyond the Black Box: A Comparative Audit of Intersectional Fairness and Adversarial Mitigation in Educational Data Mining"*
