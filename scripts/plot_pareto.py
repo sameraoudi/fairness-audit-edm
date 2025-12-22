@@ -57,47 +57,85 @@ Dependencies :
 ===============================================================================
 """
 
-
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from pathlib import Path
 
-# Data from final_paper_results.csv (OULAD)
-methods = ['Baseline (XGBoost)', 'Reweighing (Pre)', 'Thresholding (Post)', 'Adversarial (Deep)']
-recall = [0.8535, 0.8565, 0.8929, 0.8340]  # Utility (Higher is Better)
-eod = [0.2464, 0.1885, 0.1406, 0.2201]    # Unfairness (Lower is Better)
+# Config
+FIGURES_DIR = Path("figures")
+FIGURES_DIR.mkdir(exist_ok=True)
 
-# Plot Setup
-plt.figure(figsize=(10, 6))
-plt.style.use('seaborn-v0_8-whitegrid')
+def plot_pareto(dataset="oulad"):
+    print(f"Generating Pareto Plot for {dataset}...")
 
-# Plot Points
-colors = ['gray', 'blue', 'green', 'red']
-markers = ['o', 's', '*', 'D']
+    # Data from Table 2 in the paper
+    data = {
+        'Method': ['Baseline (XGBoost)', 'Reweighing (Pre)', 'Thresholding (Post)', 'Adversarial (Deep)'],
+        'Recall': [0.8535, 0.8565, 0.8929, 0.8340],       # X-axis (Higher is better)
+        'EOD':    [0.2464, 0.1885, 0.1406, 0.2201],       # Y-axis (Lower is better)
+        'Color':  ['#7f7f7f', '#1f77b4', '#2ca02c', '#d62728'], # Grey, Blue, Green, Red
+        'Marker': ['o', 's', '*', 'D']                    # Circle, Square, Star, Diamond
+    }
+    
+    # Custom Offsets to prevent label overlap (x_offset, y_offset)
+    # Adjusted specifically for OULAD results layout
+    offsets = [
+        (10, 5),    # Baseline: Push right & up slightly
+        (10, -15),  # Reweighing: Push right & down (away from Baseline)
+        (-100, 5),  # Thresholding: Push left (it's far right) & up
+        (-10, 15)   # Adversarial: Push left & up (away from Reweighing)
+    ]
 
-for i in range(len(methods)):
-    plt.scatter(recall[i], eod[i], color=colors[i], s=200, label=methods[i], marker=markers[i], edgecolors='k')
+    plt.figure(figsize=(10, 7))
+    plt.style.use('seaborn-v0_8-whitegrid')
+    
+    # 1. Plot Points
+    for i in range(len(data['Method'])):
+        plt.scatter(
+            data['Recall'][i], 
+            data['EOD'][i], 
+            color=data['Color'][i], 
+            s=250, 
+            label=data['Method'][i], 
+            marker=data['Marker'][i], 
+            edgecolors='black',
+            linewidth=1.5,
+            zorder=3
+        )
+        
+        # 2. Add Smart Annotations
+        plt.annotate(
+            data['Method'][i], 
+            (data['Recall'][i], data['EOD'][i]),
+            xytext=offsets[i], 
+            textcoords='offset points',
+            fontsize=11,
+            fontweight='bold',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="none", alpha=0.7),
+            arrowprops=dict(arrowstyle="-", color='black', alpha=0.5)
+        )
 
-# Arrows indicating "Better"
-plt.annotate('Better (High Recall)', xy=(0.88, 0.26), xytext=(0.90, 0.26),
-             arrowprops=dict(facecolor='black', shrink=0.05))
-plt.annotate('Better (Low Bias)', xy=(0.82, 0.15), xytext=(0.82, 0.10),
-             arrowprops=dict(facecolor='black', shrink=0.05))
+    # 3. Add "Ideal" Arrow
+    # Arrow pointing to Bottom-Right (High Recall, Low Unfairness)
+    plt.arrow(0.82, 0.26, 0.08, -0.12, head_width=0.01, head_length=0.015, fc='gold', ec='orange', alpha=0.6, width=0.002)
+    plt.text(0.86, 0.20, "Better Performance\n& Fairness", color='orange', fontweight='bold', rotation=-35, ha='center')
 
-# Ideal Point Annotation
-plt.scatter(1.0, 0.0, color='gold', s=300, marker='*', label='Ideal State')
-plt.text(0.98, 0.02, "Ideal", fontsize=12)
+    # 4. Formatting
+    plt.title(f'Figure 2: Fairness-Accuracy Pareto Frontier ({dataset.upper()})', fontsize=15, pad=20)
+    plt.xlabel('Recall (Sensitivity) $\\rightarrow$\n(Higher is Better)', fontsize=12, fontweight='bold')
+    plt.ylabel('Equal Opportunity Difference (Unfairness) $\\rightarrow$\n(Lower is Better)', fontsize=12, fontweight='bold')
+    
+    # Set limits with padding to prevent label clipping
+    plt.xlim(0.80, 0.92)
+    plt.ylim(0.10, 0.30)
+    
+    plt.grid(True, linestyle='--', alpha=0.6)
+    
+    # Save
+    out_path = FIGURES_DIR / f"pareto_{dataset}.png"
+    plt.savefig(out_path, dpi=300, bbox_inches='tight')
+    print(f"Pareto plot saved to {out_path}")
 
-# Labels and Title
-plt.xlabel('Recall (Sensitivity)', fontsize=12, fontweight='bold')
-plt.ylabel('Equal Opportunity Difference (Unfairness)', fontsize=12, fontweight='bold')
-plt.title('Figure 2: Fairness-Accuracy Pareto Frontier (OULAD Dataset)', fontsize=14)
-plt.legend(loc='upper right')
-plt.grid(True, linestyle='--', alpha=0.7)
-
-# Invert Y axis so "Lower" is visually "Better" (Optional, but standard Pareto plots usually maximize both)
-# Here we keep standard: Bottom-Right is the goal (Low EOD, High Recall)
-plt.xlim(0.80, 0.91)
-plt.ylim(0.0, 0.30)
-
-plt.tight_layout()
-plt.savefig('figure_2_pareto.png', dpi=300)
-plt.show()
+if __name__ == "__main__":
+    plot_pareto()
