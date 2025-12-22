@@ -51,7 +51,7 @@ Email         : cybersecurity@sameraoudi.com
 ORCID         : 0000-0003-3887-0119
 Created On    : 2025-Dec-10
 
-License       : MIT License (recommended for reproducible research)
+License       : MIT License
 Citation      : If this code is used in academic work, please cite the
                 corresponding publication or acknowledge the author.
 
