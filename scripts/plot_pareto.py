@@ -69,11 +69,11 @@ FIGURES_DIR.mkdir(exist_ok=True)
 def plot_pareto(dataset="oulad"):
     print(f"Generating Pareto Plot for {dataset}...")
 
-    # Data from Table 2 in the paper
+    # Data from Table 5 in the paper (deterministic run, seed=42)
     data = {
         'Method': ['Baseline (XGBoost)', 'Reweighing (Pre)', 'Thresholding (Post)', 'Adversarial (Deep)'],
-        'Recall': [0.8535, 0.8565, 0.8929, 0.8340],       # X-axis (Higher is better)
-        'EOD':    [0.2464, 0.1885, 0.1406, 0.2201],       # Y-axis (Lower is better)
+        'Recall': [0.8535, 0.8565, 0.8908, 0.8392],       # X-axis (Higher is better)
+        'EOD':    [0.2464, 0.1885, 0.1727, 0.2013],       # Y-axis (Lower is better)
         'Color':  ['#7f7f7f', '#1f77b4', '#2ca02c', '#d62728'], # Grey, Blue, Green, Red
         'Marker': ['o', 's', '*', 'D']                    # Circle, Square, Star, Diamond
     }
@@ -122,7 +122,7 @@ def plot_pareto(dataset="oulad"):
     plt.text(0.86, 0.20, "Better Performance\n& Fairness", color='orange', fontweight='bold', rotation=-35, ha='center')
 
     # 4. Formatting
-    plt.title(f'Figure 2: Fairness-Accuracy Pareto Frontier ({dataset.upper()})', fontsize=15, pad=20)
+    plt.title(f'Figure 3: Fairness-Accuracy Pareto Frontier ({dataset.upper()})', fontsize=15, pad=20)
     plt.xlabel('Recall (Sensitivity) $\\rightarrow$\n(Higher is Better)', fontsize=12, fontweight='bold')
     plt.ylabel('Equal Opportunity Difference (Unfairness) $\\rightarrow$\n(Lower is Better)', fontsize=12, fontweight='bold')
     
