@@ -231,7 +231,7 @@ def run_standard_mitigation(dataset):
     post_model.fit(d["X_val"], d["y_val"].iloc[:, 0], sensitive_features=s_val)
     
     # Predict on Test
-    preds_post = post_model.predict(d["X_test"], sensitive_features=s_test)
+    preds_post = post_model.predict(d["X_test"], sensitive_features=s_test, random_state=RANDOM_SEED)
     
     metrics_post = evaluate(d["y_test"], preds_post) # No AUC for hard predictions
     metrics_post["roc_auc"] = "N/A"
