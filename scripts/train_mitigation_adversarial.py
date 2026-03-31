@@ -98,6 +98,17 @@ with open("configs/fairness_constraints.yaml") as f:
     config = yaml.safe_load(f)
     RANDOM_SEED = config.get("random_seed", 42)
 
+# Fix all random seeds for full reproducibility (os, Python, NumPy, PyTorch)
+import os as _os, random as _random
+_os.environ["PYTHONHASHSEED"] = str(RANDOM_SEED)
+_random.seed(RANDOM_SEED)
+import numpy as _np_seed
+_np_seed.random.seed(RANDOM_SEED)
+torch.manual_seed(RANDOM_SEED)
+torch.cuda.manual_seed_all(RANDOM_SEED)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 # Hyperparameters for Adversarial Training
 HIDDEN_DIM = 64
 ADVERSARY_WEIGHT = 0.5  # Lambda (Trade-off parameter)
@@ -187,8 +198,6 @@ def load_data(dataset):
 
 def run_adversarial_debiasing(dataset):
     print(f"[{dataset}] Starting Adversarial Debiasing...")
-    torch.manual_seed(RANDOM_SEED)
-    
     d = load_data(dataset)
     
     # Prepare Sensitive Attribute (Target for Adversary)
