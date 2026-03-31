@@ -88,6 +88,19 @@ All reported results are fully deterministic and reproducible from this codebase
 
 ---
 
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+python run.py
+```
+
+The interactive runner guides you through environment setup, data preparation, and all experimental phases. It detects which steps have already been completed and lets you run phases individually or sequentially.
+
+For advanced usage, individual scripts can still be run directly — see [Reproducing the Experiments](#reproducing-the-experiments) below.
+
+---
+
 ## Usage
 
 ### 1. Installation
