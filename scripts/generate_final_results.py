@@ -193,7 +193,7 @@ def main():
             with open(MODELS_DIR / "mitigated_post" / f"{ds}_threshold.pkl", "rb") as f:
                 model = pickle.load(f)
             # ThresholdOptimizer requires sensitive_features arg
-            preds = model.predict(X_test, sensitive_features=sens_test[sens_col].astype(str))
+            preds = model.predict(X_test, sensitive_features=sens_test[sens_col].astype(str), random_state=42)
             m = get_metrics(y_true, preds, s_data)
             m.update({"Dataset": ds, "Method": "Thresholding"})
             final_results.append(m)
@@ -210,7 +210,14 @@ def main():
             
             # Init Model
             model = FairNet(input_dim=X_test.shape[1], n_sensitive_classes=len(s_classes))
-            model.load_state_dict(torch.load(MODELS_DIR / "mitigated_adversarial" / f"{ds}_adversarial.pth"))
+            # Load from mitigated_adversarial_det (fully seeded retraining, seed=42).
+            # After re-running train_mitigation_adversarial.py with fixed seeds,
+            # both directories will produce identical weights; use mitigated_adversarial_det
+            # as canonical until the pipeline is re-run end-to-end.
+            adv_path = MODELS_DIR / "mitigated_adversarial_det" / f"{ds}_adversarial_det.pth"
+            if not adv_path.exists():
+                adv_path = MODELS_DIR / "mitigated_adversarial" / f"{ds}_adversarial.pth"
+            model.load_state_dict(torch.load(adv_path, map_location="cpu"))
             model.eval()
             
             with torch.no_grad():
