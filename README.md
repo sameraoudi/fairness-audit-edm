@@ -1,21 +1,107 @@
-# Fairness Audit & Mitigation in Educational Data Mining
+# No Silver Bullet: Dataset-Dependent Fairness in Educational AI and a Governance Framework for Responsible Deployment
 
-**Supplementary Code for the Paper:**
-*"Beyond the Black Box: Intersectional Fairness Gerrymandering in Educational AI and a Parsimony-First Governance Framework "*
+**Supplementary code and verification artifacts for the manuscript submitted to *Education Sciences* (MDPI).**
 
-**Target Journal:** AI and Ethics
+Samer Aoudi\*, Hussain Al-Aqrabi, Nur Siyam, Mohammed Saleh, and Daoud Daoud
+
+\* Corresponding author
+
+Archived release: [https://doi.org/10.5281/zenodo.22974238](https://doi.org/10.5281/zenodo.22974238)
 
 ---
 
 ## Overview
 
-This repository contains the official implementation of the **Fairness Audit & Mitigation Framework** proposed in our study. We investigate "Fairness Gerrymandering" in student success prediction models and evaluate three mitigation strategies across diverse educational datasets.
+This repository supports a fairness audit of student-success prediction models on three public educational datasets, together with a governance framework that specifies when a fairness-mitigation method may be deployed.
 
-**Key Findings Reproduced by this Code:**
+The work has two distinct parts:
 
-1. **Detection:** Standard XGBoost baselines encode "Digital Habitus," disproportionately penalizing Low-SES female students.
-2. **Mitigation effectiveness:** Threshold Optimization (Post-processing) achieves the lowest EOD (0.173) with high recall (0.891) on OULAD, outperforming Adversarial Debiasing.
-3. **Model Collapse Warning:** Both Adversarial Debiasing and Threshold Optimization exhibit degenerate behavior ("Model Collapse") on the small, near-separable UCI dataset (EOD = 1.0 for both). Only Reweighing avoids destabilization.
+1. **Empirical findings.** Audit baseline models for gender, SES, and intersectional disparities. Then compare three mitigation strategies (Reweighing, Threshold Optimization, Adversarial Debiasing) under protocols suited to each dataset.
+2. **Governance framework.** Encode five deployment guards as a formal rule, `Deploy(m)`, and check with the Z3 SMT solver that the rule is internally consistent.
+
+**Prediction target.** The positive class is **Pass** (student success), not "at-risk". So the true-positive rate (TPR) measures how well the model **recognises successful students**, and TPR gaps show which groups' success is under-recognised.
+
+---
+
+## Datasets
+
+Raw data are not redistributed. Download them from the original sources and place them in `data/raw/<dataset>/`.
+
+| Dataset | N | Source | What it tests |
+|---------|---|--------|---------------|
+| OULAD (Open University Learning Analytics Dataset) | 32,593 student–module records | [research.stem.open.ac.uk/ouanalyse/dataset](https://research.stem.open.ac.uk/ouanalyse/dataset/) | Large-scale audit: gender, SES, and gender × SES disparities; fixed-split mitigation comparison |
+| UCI Student Performance | 395 students | [archive.ics.uci.edu/dataset/320](https://archive.ics.uci.edu/dataset/320/student+performance) | Design sensitivity: whether method rankings hold under different outcome thresholds, feature sets, and SES definitions |
+| xAPI-Edu-Data | 478 unique records (480 raw; 2 exact duplicates removed) | [kaggle.com/datasets/aljarah/xAPI-Edu-Data](https://www.kaggle.com/datasets/aljarah/xAPI-Edu-Data) | Small-sample robustness: gender EOD across 20 independent splits |
+
+---
+
+## Empirical Findings
+
+### OULAD
+
+- The baseline shows a **gender-driven TPR gap of about 9 percentage points** (p < 0.001): the model recognises successful female students less often than successful male students.
+- The **gender × SES interaction is not significant** (p = 0.642). The data do **not** support a "double disadvantage" claim for low-SES female students beyond the additive gender effect.
+- The intersectional equal-opportunity difference (IEOD, TPR over gender × SES) is **0.110**.
+  - An earlier version of this repository reported **0.1286** as an intersectional EOD. That was wrong. 0.1286 is a **one-sided pairwise TPR gap** between a single reference subgroup and a single target subgroup. It is not an intersectional EOD.
+- On the fixed split, **Threshold Optimization reduced disparity relative to Adversarial Debiasing**.
+
+### UCI Student Performance
+
+- **No catastrophic collapse was observed** in any of the **1,440 evaluations**. Earlier versions of this repository claimed "model collapse" on UCI; that claim is withdrawn.
+- The main finding is **design sensitivity**. Which mitigation method ranks best changes with:
+  - the pass threshold on G3 (≥ 10, ≥ 11, ≥ 12),
+  - whether prior-period grades G1/G2 are available as features,
+  - the definition of SES.
+- Fairness and utility can come apart. In one condition (G3 ≥ 12, no G1/G2), Thresholding achieved **IEOD = 0.253 but recall = 0.223**: fairness looks better because the model recognises very few successful students. The recall guard in the governance framework (below) exists to reject this kind of configuration.
+
+### xAPI-Edu-Data
+
+- Corrected protocol:
+  - **2 exact duplicate rows removed** (480 → 478 unique records),
+  - **20 independent stratified 70/15/15 holdout splits** (seeds 42–61),
+  - **HistGradientBoosting** baseline (not XGBoost, as stated in earlier versions).
+- **No mitigation method significantly improved gender EOD** over the baseline.
+
+### Explainability (SHAP)
+
+SHAP analysis shows **attribution differences**: how feature contributions to predictions differ across groups. These are descriptive attributions of model behaviour. They are **not causal mechanisms**, and they do not show why disparities arise in the underlying educational process.
+
+---
+
+## Governance Framework
+
+### Deployment rule
+
+A mitigation method `m` is authorised for deployment only if all five guards hold:
+
+```
+Deploy(m) = (ieod_method   <  ieod_baseline)   # G1  fairness improvement over baseline
+          ∧ (recall_method ≥  0.70)            # G2  recall guard
+          ∧ (collapse_rate ≤  0.10)            # G3  collapse guard
+          ∧ (subgroup_min  ≥  50)              # G4  minimum subgroup support
+          ∧ (seed_std      ≤  0.05)            # G5  stability across random seeds
+```
+
+### Z3 verification (manuscript Table 6)
+
+[`z3/verify_guardrails.py`](z3/verify_guardrails.py) encodes the rule over real-valued variables and checks:
+
+| Property | Query | Expected |
+|----------|-------|----------|
+| P1–P5 | For each guard G*i*: `Deploy(m) ∧ ¬G`*i* | UNSAT |
+| P6 (combined) | `Deploy(m) ∧ (¬G1 ∨ … ∨ ¬G5)` | UNSAT |
+| Weakened model | Recall guard **removed**; IEOD = 0.253, baseline IEOD = 0.412, recall = 0.223 | SAT |
+
+The script also reports the mean solver time for the combined query over 10,000 iterations. This time depends on the machine; expect sub-millisecond values.
+
+**What it proves.**
+- The encoded rule has no loophole: no combination of metric values can be authorised while violating any guard (P1–P5), or any combination of guards (P6).
+- The weakened-model counterexample shows the **recall guard** is necessary. Without it, the rule would authorise the UCI Thresholding configuration (IEOD = 0.253, recall = 0.223), which looks fairer only because recall has collapsed.
+
+**What it does not prove.**
+- Z3 checks the **internal consistency of the encoded deployment rules** only.
+- It does not verify trained classifiers, datasets, or the empirical fairness estimates.
+- It does not show that the chosen thresholds (0.70, 0.10, 50, 0.05) are the right ones for a given institution.
 
 ---
 
@@ -23,202 +109,95 @@ This repository contains the official implementation of the **Fairness Audit & M
 
 ```text
 fairness-audit-edm/
-│
-├── configs/
-│   └── fairness_constraints.yaml       # Hyperparameters and random seed
-│
-├── data/
-│   ├── raw/                            # Raw data (download separately; see below)
-│   └── processed/                      # Processed X.csv, y.csv, sensitive.csv
-│       ├── oulad/
-│       ├── uci/
-│       └── xapi/
-│
-├── figures/                            # Generated plots (Pareto Frontier, DAGs)
-│   ├── figure2_pareto_oulad.png        # Fairness–accuracy Pareto frontier (OULAD)
-│   └── fig4_model_collapse.png         # UCI adversarial training dynamics
-│
-├── models/                             # Saved model artifacts (.pkl, .pth)
-│   ├── baselines/
-│   ├── mitigated_pre/
-│   ├── mitigated_post/
-│   ├── mitigated_adversarial/
-│   └── mitigated_adversarial_det/      # Deterministically retrained adversarial models
-│
-├── results/                            # Metrics and audit outputs
-│   ├── baseline_performance.csv
-│   ├── final_paper_results.csv         # Table 5 (deterministic, seed=42)
-│   └── uci_adversarial_epoch_metrics.csv  # Per-epoch dynamics for Fig 4
-│
-├── scripts/                            # Main execution pipeline
-│   ├── preprocess/
-│   │   ├── preprocess_oulad.py
-│   │   ├── preprocess_uci.py
-│   │   └── preprocess_xapi.py
-│   ├── audit_fairness.py               # Phase 1: Detect bias
-│   ├── train_baselines.py              # Phase 2: Train XGBoost baselines
-│   ├── train_mitigation_standard.py    # Phase 3a: Reweighing + ThresholdOptimizer
-│   ├── train_mitigation_adversarial.py # Phase 3b: Adversarial FairNet (GRL)
-│   ├── generate_final_results.py       # Phase 4: Generate Table 5 (final_paper_results.csv)
-│   └── plot_pareto.py                  # Phase 5: Generate Pareto frontier figure
-│
-├── src/
-│   └── causal_model.py                 # Structural Causal Model (DAG) visualization
-│
-├── splits/                             # Fixed train/val/test index arrays (.npy)
-│   ├── oulad/
-│   ├── uci/
-│   └── xapi/
-│
+├── configs/fairness_constraints.yaml   # Hyperparameters and random seed
+├── scripts/
+│   ├── preprocess/                     # preprocess_{oulad,uci,xapi}.py
+│   ├── audit_fairness.py               # Subgroup fairness audit
+│   ├── train_baselines.py              # Fixed-split baselines
+│   ├── train_mitigation_standard.py    # Reweighing + ThresholdOptimizer
+│   ├── train_mitigation_adversarial.py # Adversarial debiasing (gradient reversal)
+│   ├── generate_final_results.py       # Fixed-split comparison table
+│   ├── plot_pareto.py                  # Fairness–recall Pareto figure (OULAD)
+│   └── plot_additional_figures.py
+├── src/causal_model.py                 # Conceptual DAG figure (illustrative, not causal evidence)
+├── z3/
+│   ├── verify_guardrails.py            # Z3 verification of Deploy(m) (Table 6)
+│   └── requirements.txt
 ├── requirements.txt
-└── README.md
+└── LICENSE
 ```
 
 ---
 
-## 🔒 Reproducibility
+## How to Reproduce
 
-All experiments use fixed random seeds (`seed = 42`) throughout, including:
-- Model training (XGBoost, adversarial network)
-- Data splitting (stratified by Y × Gender × SES)
-- ThresholdOptimizer predictions (`random_state=42`)
-- Adversarial network initialization (os, random, numpy, torch)
-
-All reported results are fully deterministic and reproducible from this codebase.
-
----
-
-## Quick Start
+### Environment
 
 ```bash
-pip install -r requirements.txt
-python run.py
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # experiment pipeline
+pip install -r z3/requirements.txt       # Z3 verification (z3-solver)
 ```
 
-The interactive runner guides you through environment setup, data preparation, and all experimental phases. It detects which steps have already been completed and lets you run phases individually or sequentially.
+### Running the experiments
 
-For advanced usage, individual scripts can still be run directly — see [Reproducing the Experiments](#reproducing-the-experiments) below.
-
----
-
-## Usage
-
-### 1. Installation
+Download the raw data (see [Datasets](#datasets)), then:
 
 ```bash
-pip install -r requirements.txt
-```
+# Preprocess
+python scripts/preprocess/preprocess_oulad.py
+python scripts/preprocess/preprocess_uci.py
+python scripts/preprocess/preprocess_xapi.py
 
-### 2. Data Preparation
-
-**Note:** Raw data are not included due to licensing and size constraints. Download from the sources below and place in `data/raw/`.
-
-| Dataset | Source |
-|---------|--------|
-| OULAD | [Open University Learning Analytics Dataset](https://analyse.kmi.open.ac.uk/open_dataset) |
-| xAPI-Edu-Data | [UCI ML Repository — Higher Education Students](https://archive.ics.uci.edu/ml/datasets/Higher+Education+Students+Performance+Evaluation+Dataset) |
-| UCI Student Performance | [UCI ML Repository — Student Performance](https://archive.ics.uci.edu/ml/datasets/Student+Performance) |
-
-Structure the processed data as:
-
-```text
-data/processed/
-├── oulad/   { X.csv, y.csv, sensitive.csv }
-├── uci/     { X.csv, y.csv, sensitive.csv }
-└── xapi/    { X.csv, y.csv, sensitive.csv }
-```
-
----
-
-## Reproducing the Experiments
-
-### Phase 1: Bias Detection
-
-Audit the XGBoost baselines for intersectional fairness violations.
-
-```bash
+# Baselines, audit, mitigation (repeat for --dataset uci / xapi)
+python scripts/train_baselines.py --dataset oulad
 python scripts/audit_fairness.py --dataset oulad
-python scripts/audit_fairness.py --dataset uci
-python scripts/audit_fairness.py --dataset xapi
-```
-
-### Phase 2: Causal Diagnosis
-
-Generate the Structural Causal Model (DAG) illustrating the "Digital Habitus" mechanism.
-
-```bash
-python src/causal_model.py
-# Output: figures/causal_dag_v1.png
-```
-
-### Phase 3: Mitigation
-
-Train all three mitigation strategies across all three datasets.
-
-**A. Standard Mitigations (Reweighing + ThresholdOptimizer)**
-
-```bash
 python scripts/train_mitigation_standard.py --dataset oulad
-python scripts/train_mitigation_standard.py --dataset uci
-python scripts/train_mitigation_standard.py --dataset xapi
-```
-
-**B. Adversarial Debiasing (FairNet with Gradient Reversal Layer)**
-
-```bash
 python scripts/train_mitigation_adversarial.py --dataset oulad
-python scripts/train_mitigation_adversarial.py --dataset uci
-python scripts/train_mitigation_adversarial.py --dataset xapi
-```
 
-### Phase 4: Evaluation & Reporting
-
-Generate Table 5 (Comparative Performance of Mitigation Strategies).
-
-```bash
+# Fixed-split comparison and figures
 python scripts/generate_final_results.py
-# Output: results/final_paper_results.csv
+python scripts/plot_pareto.py
 ```
 
-### Phase 5: Figures
+> **Scope note.** The scripts above implement the fixed-split pipeline (seed 42), which underlies the OULAD fixed-split comparison. Scripts for two analyses are **not yet included** in this repository and will be added in a later update:
+> - the corrected xAPI protocol (deduplication, 20 independent splits, HistGradientBoosting),
+> - the UCI design-sensitivity sweep (1,440 evaluations).
+>
+> Until then, the values reported for those analyses come from the manuscript.
 
-Generate the Fairness–Accuracy Pareto Frontier (Figure 3).
+### Running the Z3 verification
 
 ```bash
-python scripts/plot_pareto.py
-# Output: figures/figure2_pareto_oulad.png
+python z3/verify_guardrails.py
 ```
+
+The script prints the Table 6 results and the counterexample admitted by the weakened model. It exits with status 0 only if every result matches its expected value.
 
 ---
 
-## Results Summary (Table 5)
+## Citation
 
-| Dataset | Method                 | Accuracy | Recall | EOD/IEOD | Verdict      |
-|---------|------------------------|----------|--------|----------|--------------|
-| OULAD   | Baseline (XGBoost)     | 0.829    | 0.853  | 0.246    | Biased       |
-| OULAD   | Reweighing (Pre)       | 0.831    | 0.857  | 0.189    | Improved     |
-| OULAD   | Thresholding (Post)    | 0.798    | 0.891  | 0.173    | Best         |
-| OULAD   | Adversarial (Deep)     | 0.817    | 0.839  | 0.201    | Marginal     |
-| UCI     | Baseline (XGBoost)     | 0.950    | 0.950  | 0.250    | Control      |
-| UCI     | Reweighing (Pre)       | 0.950    | 0.925  | 0.250    | No change    |
-| UCI     | Thresholding (Post)    | 0.783    | 0.800  | 1.000    | Collapsed    |
-| UCI     | Adversarial (Deep)     | 0.867    | 0.875  | 1.000    | Collapsed    |
-| xAPI    | Baseline (XGBoost)     | 0.764    | 0.811  | 0.438    | Biased       |
-| xAPI    | Reweighing (Pre)       | 0.736    | 0.717  | 0.250    | Best         |
-| xAPI    | Thresholding (Post)    | 0.833    | 0.887  | 0.375    | Improved     |
-| xAPI    | Adversarial (Deep)     | 0.792    | 0.849  | 0.438    | No change    |
+If you use this code, please cite the manuscript:
 
-EOD/IEOD = Fairlearn `equalized_odds_difference`; sensitive attribute = `ses_quintile` (OULAD/UCI) or `gender` (xAPI).
+> Aoudi, S.; Al-Aqrabi, H.; Siyam, N.; Saleh, M.; Daoud, D. No Silver Bullet: Dataset-Dependent Fairness in Educational AI and a Governance Framework for Responsible Deployment. *Education Sciences* 2026, submitted.
+
+```bibtex
+@article{aoudi2026nosilverbullet,
+  author  = {Aoudi, Samer and Al-Aqrabi, Hussain and Siyam, Nur and Saleh, Mohammed and Daoud, Daoud},
+  title   = {No Silver Bullet: Dataset-Dependent Fairness in Educational {AI} and a Governance Framework for Responsible Deployment},
+  journal = {Education Sciences},
+  year    = {2026},
+  note    = {Submitted}
+}
+```
+
+and the archived software release:
+
+> Aoudi, S.; Al-Aqrabi, H.; Siyam, N.; Saleh, M.; Daoud, D. *No Silver Bullet: Code and Verification Artifacts* [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.22974238
 
 ---
 
 ## License
 
-This project is licensed under the MIT License — see the LICENSE file for details.
-
-## Citation
-
-Please cite the software using the generated DOI:
-
-> Aoudi, S. (2025). *Fairness Audit & Mitigation Framework for EDM (v1.0.1)* [Computer software]. Zenodo.
-> https://doi.org/10.5281/zenodo.17999876
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
